@@ -1,0 +1,11 @@
+.dist/
+.qodo/
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
+.lucide-check.min.js
+graphify-out/

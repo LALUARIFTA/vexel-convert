@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VexelFlow — Smart Document & Media Conversion Workspace</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@1.72.0"></script>
+
+  <!-- Tailwind Custom Design Tokens -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#EEF2FF',
+              100: '#E0E7FF',
+              200: '#C7D2FE',
+              500: '#6366F1',
+              600: '#4F46E5',
+              700: '#4338CA',
+              900: '#312E81',
+            },
+            accent: {
+              50: '#FFFBEB',
+              100: '#FEF3C7',
+              400: '#FBBF24',
+              500: '#F59E0B',
+              600: '#D97706',
+            },
+          },
+          boxShadow: {
+            card: '0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.03)',
+            'card-hover': '0 12px 28px -4px rgba(79, 70, 229, 0.10), 0 4px 10px -2px rgba(15, 23, 42, 0.04)',
+            shell: '0 25px 60px -15px rgba(15, 23, 42, 0.28)',
+          },
+        },
+      },
+    };
+  </script>
+
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body class="p-2 sm:p-5 lg:p-7 flex items-center justify-center">
+
+  <!-- Mobile Drawer Overlay -->
+  <div id="mobileOverlay" onclick="toggleMobileSidebar(false)" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 hidden lg:hidden transition-opacity"></div>
+
+  <!-- Main Outer Application Shell -->
+  <div class="w-full max-w-[1380px] bg-[#F1F5F9] rounded-[24px] sm:rounded-[30px] shadow-shell p-3 sm:p-5 lg:p-6 border border-white/40 relative overflow-hidden">
+
+    <p class="mb-4 rounded-xl border border-brand-100 bg-brand-50 px-4 py-2.5 text-center text-[11px] text-brand-700">
+      Template frontend demo — konversi, download, pembayaran, dan sharing adalah simulasi lokal.
+    </p>
+
+    <!-- Mobile Top Header (Visible on < lg) -->
+    <header class="flex lg:hidden items-center justify-between bg-white rounded-2xl px-4 py-3 mb-4 shadow-card border border-slate-200/60">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center text-white shadow-sm">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
+            <path d="M5 7L10.5 12L5 17" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M19 7L13.5 12L19 17" stroke="#FBBF24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="1.75" fill="#FFFFFF"/>
+          </svg>
+        </div>
+        <span class="font-display font-bold text-lg tracking-tight text-slate-900">VexelFlow</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="openFileModal()" class="btn-interactive inline-flex items-center gap-1.5 bg-brand-600 text-white text-xs font-semibold px-3 py-2 rounded-xl">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Baru</span>
+        </button>
+        <button onclick="toggleMobileSidebar(true)" aria-label="Buka Menu" class="p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-brand-50 hover:text-brand-600 transition-colors">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- 3-Column Bento Grid Shell -->
+    <div class="flex flex-col lg:flex-row gap-4 lg:gap-5 items-stretch lg:h-[750px]">
+
+      <!-- ========================================================= -->
+      <!-- COLUMN 1: LEFT SIDEBAR (2 Separate Stacked Cards)         -->
+      <!-- ========================================================= -->
+      <aside id="sidebarDrawer" class="fixed lg:static inset-y-0 left-0 z-50 w-[276px] lg:w-[252px] shrink-0 lg:h-full bg-[#F1F5F9] lg:bg-transparent p-4 lg:p-0 flex flex-col justify-between gap-4 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-out">
+
+        <!-- TOP CARD: Pinned Brand Header + Scrollable Menu + Pinned Log Out -->
+        <div class="bento-card animate-stagger delay-1 bg-white rounded-2xl p-5 shadow-card border border-slate-200/60 flex flex-col flex-1 min-h-0 overflow-hidden">
+
+          <!-- Zone 1: Pinned Brand Header (shrink-0) -->
+          <div class="shrink-0 flex items-center justify-between pb-3.5 mb-2 border-b border-slate-100/80">
+            <a href="#home" onclick="navigateTo('home'); return false;" class="flex items-center gap-3 group">
+              <div class="w-9 h-9 rounded-xl bg-brand-600 group-hover:bg-brand-700 transition-colors flex items-center justify-center text-white shadow-sm shadow-brand-600/25">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 7L10.5 12L5 17" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M19 7L13.5 12L19 17" stroke="#FBBF24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="12" r="1.75" fill="#FFFFFF"/>
+                </svg>
+              </div>
+              <span class="font-display font-bold text-[18px] tracking-tight text-slate-900">VexelFlow</span>
+            </a>
+            <button onclick="toggleMobileSidebar(false)" aria-label="Tutup Menu" class="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+              <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+          </div>
+
+          <!-- Zone 2: Scrollable Navigation Area (flex-1 min-h-0 overflow-y-auto) -->
+          <nav id="mainNav" class="flex-1 min-h-0 overflow-y-auto pr-1.5 custom-scrollbar space-y-1 py-1" aria-label="Navigasi Utama">
+            <button data-route="home" onclick="navigateTo('home')" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+              <span class="flex items-center gap-3">
+                <i data-lucide="layout-grid" class="w-[18px] h-[18px] shrink-0"></i>
+                <span>Home</span>
+              </span>
+            </button>
+
+            <button data-route="all-files" onclick="navigateTo('all-files')" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+              <span class="flex items-center gap-3">
+                <i data-lucide="folder-kanban" class="w-[18px] h-[18px] shrink-0"></i>
+                <span>All files</span>
+              </span>
+              <span id="navBadgeAll" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">0</span>
+            </button>
+
+            <button data-route="shared-by-you" onclick="navigateTo('shared-by-you')" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+              <span class="flex items-center gap-3">
+                <i data-lucide="share-2" class="w-[18px] h-[18px] shrink-0"></i>
+                <span>Shared by you</span>
+              </span>
+              <span id="navBadgeSharedBy" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">0</span>
+            </button>
+
+            <button data-route="shared-with-you" onclick="navigateTo('shared-with-you')" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+              <span class="flex items-center gap-3">
+                <i data-lucide="inbox" class="w-[18px] h-[18px] shrink-0"></i>
+                <span>Shared with you</span>
+              </span>
+              <span id="navBadgeSharedWith" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">0</span>
+            </button>
+
+            <!-- Expandable Converter Tools Accordion Sub-Menu (Demonstrates Smooth Menu Scrolling) -->
+            <div class="pt-1">
+              <button
+                type="button"
+                onclick="toggleToolsAccordion()"
+                aria-expanded="true"
+                id="toolsAccordionBtn"
+                class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all"
+              >
+                <span class="flex items-center gap-3">
+                  <i data-lucide="wand-2" class="w-[18px] h-[18px] text-brand-600 shrink-0"></i>
+                  <span>Converter Tools</span>
+                </span>
+                <i id="toolsAccordionChevron" data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200 rotate-180"></i>
+              </button>
+
+              <div id="toolsSubmenuList" class="mt-1 ml-3 pl-3 border-l-2 border-brand-100 space-y-0.5">
+                <button onclick="selectSidebarTool('JPG', 'PDF', 'JPG to PDF')" data-tool="JPG to PDF" class="tool-subitem w-full text-left px-3 py-2 rounded-lg text-xs font-semibold bg-brand-50/80 text-brand-600 flex items-center justify-between transition-colors">
+                  <span>JPG to PDF</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-white text-brand-600 border border-brand-100">Hot</span>
+                </button>
+                <button onclick="selectSidebarTool('DOC', 'XLS', 'DOC to XLS')" data-tool="DOC to XLS" class="tool-subitem w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-slate-500 hover:text-brand-600 hover:bg-slate-50 transition-colors">
+                  <span>DOC to XLS</span>
+                </button>
+                <button onclick="selectSidebarTool('PNG', 'SVG', 'PNG to SVG')" data-tool="PNG to SVG" class="tool-subitem w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-slate-500 hover:text-brand-600 hover:bg-slate-50 transition-colors">
+                  <span>PNG to SVG</span>
+                </button>
+                <button onclick="selectSidebarTool('PDF', 'JPG', 'PDF Layer Extract')" data-tool="PDF Layer Extract" class="tool-subitem w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-slate-500 hover:text-brand-600 hover:bg-slate-50 flex items-center justify-between transition-colors">
+                  <span>PDF Layer Extract</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 font-semibold">AI</span>
+                </button>
+                <button onclick="selectSidebarTool('JPG', 'PNG', 'Batch Compress')" data-tool="Batch Compress" class="tool-subitem w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-slate-500 hover:text-brand-600 hover:bg-slate-50 transition-colors">
+                  <span>Batch Compress</span>
+                </button>
+                <button onclick="selectSidebarTool('PDF', 'DOC', 'OCR Text Extract')" data-tool="OCR Text Extract" class="tool-subitem w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-slate-500 hover:text-brand-600 hover:bg-slate-50 transition-colors">
+                  <span>OCR Text Extract</span>
+                </button>
+              </div>
+            </div>
+
+            <button data-route="settings" onclick="navigateTo('settings')" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+              <span class="flex items-center gap-3">
+                <i data-lucide="settings" class="w-[18px] h-[18px] shrink-0"></i>
+                <span>Settings</span>
+              </span>
+            </button>
+
+            <button data-route="support" onclick="navigateTo('support')" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all">
+              <span class="flex items-center gap-3">
+                <i data-lucide="headphones" class="w-[18px] h-[18px] shrink-0"></i>
+                <span>Support Center</span>
+              </span>
+            </button>
+          </nav>
+
+          <!-- Zone 3: Pinned Log Out Footer (shrink-0) -->
+          <div class="shrink-0 pt-3 mt-2 border-t border-slate-100">
+            <button onclick="openLogoutModal()" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50/80 transition-colors">
+              <i data-lucide="log-out" class="w-[18px] h-[18px] shrink-0"></i>
+              <span>Log out</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- BOTTOM CARD: User Profile & Free Quota Meter -->
+        <div class="bento-card animate-stagger delay-2 shrink-0 bg-white rounded-2xl p-5 shadow-card border border-slate-200/60 text-center">
+          <div class="relative inline-block">
+            <img
+              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80"
+              onerror="this.onerror=null;this.src='https://placehold.co/160x160/4F46E5/FFFFFF?text=NP';"
+              alt="Nadia Pratama"
+              class="w-12 h-12 rounded-full object-cover mx-auto ring-2 ring-brand-100"
+            />
+            <span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white"></span>
+          </div>
+          <h3 id="sidebarUserName" class="font-display font-bold text-sm text-slate-900 mt-2.5">Nadia Pratama</h3>
+          <p id="sidebarUserEmail" class="text-xs text-slate-400 mt-0.5 truncate">nadia.pratama@vexelflow.io</p>
+
+          <!-- Dynamic Quota Counter -->
+          <div class="mt-3.5">
+            <p class="text-xs font-medium text-slate-500">
+              <span id="quotaUsedCount" class="font-semibold text-slate-800">8</span>/<span id="quotaMaxCount">20</span> free conversions
+            </p>
+            <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mt-2">
+              <div id="quotaProgressBar" class="h-full bg-gradient-to-r from-brand-600 to-accent-500 rounded-full transition-all duration-500" style="width: 40%"></div>
+            </div>
+          </div>
+
+          <button onclick="openUpgradeModal()" class="btn-interactive mt-4 w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-brand-600 text-white text-xs font-semibold tracking-wide shadow-sm">
+            Upgrade now
+          </button>
+        </div>
+      </aside>
+
+      <!-- ========================================================= -->
+      <!-- COLUMN 2 & 3: DYNAMIC SPA VIEWPORT                        -->
+      <!-- ========================================================= -->
+      <main class="flex-1 min-w-0 lg:h-full flex flex-col min-h-0">
+
+        <!-- Breadcrumb & Quick Toolbar (Contextual for Sub-Pages) -->
+        <div id="subpageHeader" class="hidden shrink-0 mb-4 bg-white rounded-2xl px-5 py-3.5 shadow-card border border-slate-200/60 flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2 text-xs text-slate-500">
+            <button onclick="navigateTo('home')" class="hover:text-brand-600 font-medium transition-colors">VexelFlow</button>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-400"></i>
+            <span id="breadcrumbCurrent" class="font-semibold text-slate-900">All files</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="resetDemoData()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              <span>Reset Default</span>
+            </button>
+            <button onclick="openFileModal()" class="btn-interactive inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Tambah File</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ======================================================= -->
+        <!-- VIEW 1: HOME (Center Workspace + Right Rail)            -->
+        <!-- ======================================================= -->
+        <div id="view-home" class="spa-view flex-1 min-h-0 flex flex-col xl:flex-row gap-4 lg:gap-5">
+
+          <!-- CENTER WORKSPACE COLUMN -->
+          <div class="flex-1 min-w-0 lg:h-full flex flex-col gap-4 lg:gap-5">
+
+            <!-- Top Card: Active Converter & File Queue -->
+            <section class="bento-card animate-stagger delay-2 bg-white rounded-2xl p-5 sm:p-6 shadow-card border border-slate-200/60 flex-1 min-h-0 flex flex-col justify-between overflow-hidden">
+              <div class="flex-1 min-h-0 flex flex-col">
+                <!-- Header Row -->
+                <div class="shrink-0 flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-2.5 flex-wrap">
+                    <h1 id="activeConverterTitle" class="font-display font-bold text-lg sm:text-[19px] text-slate-900">
+                      Convert JPG to PDF
+                    </h1>
+                    <span id="activeModeBadge" class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-600 border border-brand-100">
+                      <span class="w-1.5 h-1.5 rounded-full bg-brand-600"></span>
+                      Batch Ready
+                    </span>
+                  </div>
+
+                  <!-- Right Header Actions + 3-Dot Menu -->
+                  <div class="flex items-center gap-1.5 relative">
+                    <button onclick="openFileModal()" title="Tambah File Manual" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-600 text-xs font-semibold transition-colors">
+                      <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                      <span class="hidden sm:inline">Tambah Data</span>
+                    </button>
+
+                    <button id="workspaceMenuBtn" onclick="toggleDropdown('workspaceDropdown')" aria-label="Opsi Workspace" class="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+                      <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div id="workspaceDropdown" class="hidden absolute right-0 top-10 w-52 bg-white rounded-xl shadow-lg border border-slate-200/80 py-1.5 z-30 text-xs">
+                      <button onclick="openFileModal(); closeAllDropdowns();" class="w-full px-3.5 py-2 text-left text-slate-700 hover:bg-brand-50 hover:text-brand-600 flex items-center gap-2.5">
+                        <i data-lucide="file-plus-2" class="w-3.5 h-3.5"></i>
+                        <span>Tambah File Konversi</span>
+                      </button>
+                      <button onclick="completeAllConverting(); closeAllDropdowns();" class="w-full px-3.5 py-2 text-left text-slate-700 hover:bg-brand-50 hover:text-brand-600 flex items-center gap-2.5">
+                        <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                        <span>Selesaikan Semua Antrean</span>
+                      </button>
+                      <button onclick="navigateTo('all-files'); closeAllDropdowns();" class="w-full px-3.5 py-2 text-left text-slate-700 hover:bg-brand-50 hover:text-brand-600 flex items-center gap-2.5">
+                        <i data-lucide="table" class="w-3.5 h-3.5"></i>
+                        <span>Buka Manajemen CRUD</span>
+                      </button>
+                      <div class="my-1 border-t border-slate-100"></div>
+                      <button onclick="resetDemoData(); closeAllDropdowns();" class="w-full px-3.5 py-2 text-left text-amber-600 hover:bg-amber-50 flex items-center gap-2.5">
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                        <span>Reset Data Default</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Interactive Dashed Dropzone -->
+                <div
+                  id="dropzoneArea"
+                  onclick="document.getElementById('hiddenFileInput').click()"
+                  ondragover="handleDragOver(event)"
+                  ondragleave="handleDragLeave(event)"
+                  ondrop="handleFileDrop(event)"
+                  class="shrink-0 mt-5 rounded-2xl border-2 border-dashed border-brand-200 bg-brand-50/45 hover:bg-brand-50/80 hover:border-brand-500 transition-all cursor-pointer py-7 sm:py-8 px-4 text-center group"
+                >
+                  <input id="hiddenFileInput" type="file" multiple class="hidden" onchange="handleNativeFileSelect(event)" />
+                  <div class="w-11 h-11 rounded-2xl bg-white shadow-xs border border-brand-100 flex items-center justify-center mx-auto text-brand-600 group-hover:scale-105 group-hover:bg-brand-600 group-hover:text-white transition-all">
+                    <i data-lucide="cloud-upload" class="w-5 h-5"></i>
+                  </div>
+                  <p class="mt-3 text-sm font-medium text-slate-700">
+                    Click or drag your files here to convert
+                  </p>
+                  <p class="mt-1 text-[11px] text-slate-400">
+                    Mendukung JPG, PNG, SVG, DOC, PDF, XLS hingga 50 MB • Klik untuk unggah atau gunakan <span class="text-brand-600 font-medium">+ Tambah Data</span>
+                  </p>
+                </div>
+
+                <!-- Active Queue File Rows -->
+                <div id="homeQueueList" class="mt-4 space-y-2.5 flex-1 min-h-0 overflow-y-auto pr-1 custom-scrollbar">
+                  <!-- Rendered dynamically via JS -->
+                </div>
+              </div>
+
+              <!-- Footer: File Count + Download All CTA -->
+              <div class="shrink-0 mt-4 pt-3 border-t border-slate-100/80 flex flex-wrap items-center justify-between gap-3">
+                <p class="text-xs font-medium text-slate-400">
+                  Total <span id="homeQueueCount" class="text-slate-700 font-semibold">3</span> files
+                </p>
+
+                <button onclick="downloadAllQueue()" class="btn-interactive inline-flex items-center gap-2 bg-slate-900 hover:bg-brand-600 text-white text-xs font-semibold px-5 py-2.5 rounded-xl shadow-sm">
+                  <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                  <span>Download All</span>
+                </button>
+              </div>
+            </section>
+
+            <!-- Bottom Card: Recommended Tools -->
+            <section class="bento-card animate-stagger delay-3 shrink-0 bg-white rounded-2xl p-5 sm:p-6 shadow-card border border-slate-200/60">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="font-display font-bold text-base text-slate-900">Recommended tools</h2>
+                <button onclick="navigateTo('all-files')" class="text-xs font-semibold text-slate-400 hover:text-brand-600 transition-colors">
+                  View all
+                </button>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <!-- Shortcut Tool 1: JPG to PDF -->
+                <button onclick="selectSidebarTool('JPG', 'PDF', 'JPG to PDF')" class="tool-shortcut-card text-left rounded-2xl border border-slate-200/80 bg-white p-4 flex items-center gap-3.5 group">
+                  <div class="relative w-12 h-12 shrink-0 flex items-center justify-center">
+                    <span class="absolute top-0.5 right-0.5 px-1.5 py-0.5 rounded-md bg-rose-50 border border-rose-200 text-[9px] font-bold text-rose-600">PDF</span>
+                    <span class="absolute bottom-0.5 left-0.5 px-1.5 py-0.5 rounded-md bg-brand-50 border border-brand-200 text-[9px] font-bold text-brand-600">JPG</span>
+                    <i data-lucide="repeat" class="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-600 transition-colors"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <h3 class="font-display font-bold text-sm text-slate-900 group-hover:text-brand-600 transition-colors">JPG to PDF</h3>
+                    <p class="text-xs text-slate-400 mt-0.5 leading-snug">Convert any JPG files to PDF format</p>
+                  </div>
+                </button>
+
+                <!-- Shortcut Tool 2: DOC to XLS -->
+                <button onclick="selectSidebarTool('DOC', 'XLS', 'DOC to XLS')" class="tool-shortcut-card text-left rounded-2xl border border-slate-200/80 bg-white p-4 flex items-center gap-3.5 group">
+                  <div class="relative w-12 h-12 shrink-0 flex items-center justify-center">
+                    <span class="absolute top-0.5 right-0.5 px-1.5 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-[9px] font-bold text-emerald-600">XLS</span>
+                    <span class="absolute bottom-0.5 left-0.5 px-1.5 py-0.5 rounded-md bg-violet-50 border border-violet-200 text-[9px] font-bold text-violet-600">DOC</span>
+                    <i data-lucide="repeat" class="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-600 transition-colors"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <h3 class="font-display font-bold text-sm text-slate-900 group-hover:text-brand-600 transition-colors">DOC to XLS</h3>
+                    <p class="text-xs text-slate-400 mt-0.5 leading-snug">Convert any DOC files to XLS format</p>
+                  </div>
+                </button>
+              </div>
+            </section>
+          </div>
+
+          <!-- RIGHT RAIL COLUMN: AI CONVERTER PROMO + HISTORY -->
+          <aside class="w-full xl:w-[300px] shrink-0 lg:h-full flex flex-col md:flex-row xl:flex-col gap-4 lg:gap-5">
+
+            <!-- Top Card: AI Converter Feature Spotlight -->
+            <div class="bento-card animate-stagger delay-3 ai-promo-gradient rounded-2xl p-6 text-white shadow-card shrink-0 flex flex-col justify-between relative overflow-hidden">
+              <div class="w-32 h-32 rounded-full bg-white/10 blur-xl absolute -right-8 -top-8 pointer-events-none"></div>
+
+              <div>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-slate-900 text-[11px] font-bold shadow-xs">
+                  <span class="w-1.5 h-1.5 rounded-full bg-accent-500"></span>
+                  New feature
+                </span>
+
+                <h2 class="font-display font-bold text-xl mt-5 tracking-tight">AI Converter</h2>
+                <p class="text-xs text-indigo-100/95 mt-2 leading-relaxed">
+                  Vectorize your images with AI<br />
+                  Extract layers from PDF
+                </p>
+              </div>
+
+              <button onclick="openAiModal()" class="btn-interactive mt-6 w-full py-2.5 px-4 rounded-xl bg-white hover:bg-accent-50 text-slate-900 text-xs font-bold shadow-sm">
+                Try Now
+              </button>
+            </div>
+
+            <!-- Bottom Card: Conversion History List -->
+            <div class="bento-card animate-stagger delay-4 bg-white rounded-2xl p-5 shadow-card border border-slate-200/60 flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div class="flex items-center justify-between mb-3.5 shrink-0">
+                <h2 class="font-display font-bold text-base text-slate-900">History</h2>
+                <button onclick="navigateTo('all-files')" class="text-[11px] font-semibold text-brand-600 hover:underline">
+                  Lihat Semua
+                </button>
+              </div>
+
+              <div id="historyRailList" class="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1 custom-scrollbar">
+                <!-- Rendered dynamically via JS -->
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <!-- ======================================================= -->
+        <!-- VIEW 2: ALL FILES / SHARED BY YOU / SHARED WITH YOU     -->
+        <!-- (Full CRUD Management Table + KPI Count-Up + Filters)   -->
+        <!-- ======================================================= -->
+        <div id="view-files" class="spa-view hidden flex-1 min-h-0 overflow-y-auto pr-1 custom-scrollbar flex flex-col gap-4 lg:gap-5">
+
+          <!-- KPI Summary Strip with Animated Count-Up -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div class="bento-card animate-stagger delay-1 bg-white rounded-2xl p-4 shadow-card border border-slate-200/60">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-400">Total Dokumen</span>
+                <span class="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+                  <i data-lucide="files" class="w-4 h-4"></i>
+                </span>
+              </div>
+              <p id="kpiTotalFiles" class="font-display font-extrabold text-2xl text-slate-900 mt-2">0</p>
+              <p class="text-[11px] text-emerald-600 font-medium mt-1">Tersinkronisasi otomatis</p>
+            </div>
+
+            <div class="bento-card animate-stagger delay-2 bg-white rounded-2xl p-4 shadow-card border border-slate-200/60">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-400">Berhasil Dikonversi</span>
+                <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                </span>
+              </div>
+              <p id="kpiConvertedFiles" class="font-display font-extrabold text-2xl text-slate-900 mt-2">0</p>
+              <p class="text-[11px] text-slate-400 mt-1">Siap diunduh & dibagikan</p>
+            </div>
+
+            <div class="bento-card animate-stagger delay-3 bg-white rounded-2xl p-4 shadow-card border border-slate-200/60">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-400">Dalam Antrean / Proses</span>
+                <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <i data-lucide="loader-2" class="w-4 h-4"></i>
+                </span>
+              </div>
+              <p id="kpiProcessingFiles" class="font-display font-extrabold text-2xl text-slate-900 mt-2">0</p>
+              <p class="text-[11px] text-amber-600 font-medium mt-1">Prioritas tinggi</p>
+            </div>
+
+            <div class="bento-card animate-stagger delay-4 bg-white rounded-2xl p-4 shadow-card border border-slate-200/60">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-400">Total Kapasitas</span>
+                <span class="w-8 h-8 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
+                  <i data-lucide="hard-drive" class="w-4 h-4"></i>
+                </span>
+              </div>
+              <p id="kpiTotalStorage" class="font-display font-extrabold text-2xl text-slate-900 mt-2">0 MB</p>
+              <p class="text-[11px] text-slate-400 mt-1">Cloud Vault terenkripsi</p>
+            </div>
+          </div>
+
+          <!-- Main CRUD Data Table Card -->
+          <div class="bento-card animate-stagger delay-2 bg-white rounded-2xl p-5 sm:p-6 shadow-card border border-slate-200/60 flex-1 flex flex-col">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+              <div>
+                <h1 id="filesViewHeading" class="font-display font-bold text-lg text-slate-900">All Files & Conversion Repository</h1>
+                <p id="filesViewSubheading" class="text-xs text-slate-400 mt-0.5">Kelola, filter, sunting, dan ekspor seluruh file hasil konversi Anda.</p>
+              </div>
+
+              <!-- Search & Filters -->
+              <div class="flex flex-wrap items-center gap-2.5">
+                <div class="relative flex-1 sm:flex-initial">
+                  <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                  <input
+                    id="crudSearchInput"
+                    type="text"
+                    oninput="handleCrudFilterChange()"
+                    placeholder="Cari nama file..."
+                    class="w-full sm:w-52 pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all"
+                  />
+                </div>
+
+                <select id="crudFormatFilter" onchange="handleCrudFilterChange()" class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 bg-white focus:outline-none focus:border-brand-600">
+                  <option value="ALL">Semua Format</option>
+                  <option value="JPG">JPG</option>
+                  <option value="PNG">PNG</option>
+                  <option value="SVG">SVG</option>
+                  <option value="DOC">DOC</option>
+                  <option value="PDF">PDF</option>
+                  <option value="XLS">XLS</option>
+                </select>
+
+                <select id="crudStatusFilter" onchange="handleCrudFilterChange()" class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 bg-white focus:outline-none focus:border-brand-600">
+                  <option value="ALL">Semua Status</option>
+                  <option value="Converted">Converted</option>
+                  <option value="Converting">Converting</option>
+                  <option value="Queued">Queued</option>
+                  <option value="Failed">Failed</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Bulk Selection Action Bar -->
+            <div id="bulkActionBar" class="hidden mt-4 px-4 py-2.5 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-between">
+              <span class="text-xs font-semibold text-brand-900">
+                <span id="selectedRowsCount">0</span> file dipilih
+              </span>
+              <div class="flex items-center gap-2">
+                <button onclick="clearBulkSelection()" class="text-xs font-medium text-slate-600 hover:text-slate-900 px-2.5 py-1 rounded-lg">
+                  Batal
+                </button>
+                <button onclick="confirmBulkDelete()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  <span>Hapus Terpilih</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Responsive Table Wrapper -->
+            <div class="mt-4 overflow-x-auto flex-1 custom-scrollbar">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-100 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                    <th class="py-3 pl-3 pr-2 w-9">
+                      <input id="selectAllCheckbox" type="checkbox" onchange="toggleSelectAllRows(this.checked)" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
+                    </th>
+                    <th class="py-3 px-3 cursor-pointer hover:text-brand-600 select-none" onclick="toggleSort('name')">
+                      <div class="inline-flex items-center gap-1">
+                        <span>Nama File</span>
+                        <i data-lucide="arrow-up-down" class="w-3 h-3"></i>
+                      </div>
+                    </th>
+                    <th class="py-3 px-3">Konversi</th>
+                    <th class="py-3 px-3 cursor-pointer hover:text-brand-600 select-none" onclick="toggleSort('status')">
+                      <div class="inline-flex items-center gap-1">
+                        <span>Status</span>
+                        <i data-lucide="arrow-up-down" class="w-3 h-3"></i>
+                      </div>
+                    </th>
+                    <th class="py-3 px-3 cursor-pointer hover:text-brand-600 select-none" onclick="toggleSort('sizeMb')">
+                      <div class="inline-flex items-center gap-1">
+                        <span>Ukuran</span>
+                        <i data-lucide="arrow-up-down" class="w-3 h-3"></i>
+                      </div>
+                    </th>
+                    <th class="py-3 px-3">Kategori</th>
+                    <th class="py-3 pl-3 pr-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="crudTableBody" class="divide-y divide-slate-100 text-xs">
+                  <!-- Rendered dynamically via JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination Footer -->
+            <div class="mt-5 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+              <div class="flex items-center gap-2">
+                <span>Menampilkan <strong id="pageRangeText" class="text-slate-800">0-0</strong> dari <strong id="filteredTotalText" class="text-slate-800">0</strong> file</span>
+                <select id="rowsPerPageSelect" onchange="changeRowsPerPage(this.value)" class="px-2 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 font-medium">
+                  <option value="5">5 / hal</option>
+                  <option value="8" selected>8 / hal</option>
+                  <option value="15">15 / hal</option>
+                </select>
+              </div>
+
+              <div id="paginationControls" class="flex items-center gap-1.5">
+                <!-- Rendered dynamically via JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================= -->
+        <!-- VIEW 3: SETTINGS                                        -->
+        <!-- ======================================================= -->
+        <div id="view-settings" class="spa-view hidden flex-1 min-h-0 overflow-y-auto pr-1 custom-scrollbar">
+          <div class="bento-card animate-stagger delay-1 bg-white rounded-2xl p-6 shadow-card border border-slate-200/60">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+              <div>
+                <h1 class="font-display font-bold text-lg text-slate-900">Workspace & Conversion Settings</h1>
+                <p class="text-xs text-slate-400 mt-0.5">Sesuaikan profil akun, kualitas kompresi otomatis, dan preferensi penyimpanan lokal.</p>
+              </div>
+              <div class="inline-flex rounded-xl bg-slate-100 p-1 text-xs font-semibold">
+                <button onclick="switchSettingsTab('profile')" id="stab-profile" class="settings-tab px-3.5 py-1.5 rounded-lg bg-white text-brand-600 shadow-xs">Profil Akun</button>
+                <button onclick="switchSettingsTab('engine')" id="stab-engine" class="settings-tab px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900">Mesin Konversi</button>
+              </div>
+            </div>
+
+            <form id="settingsProfileForm" onsubmit="saveSettings(event)" class="mt-6 max-w-xl space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Lengkap</label>
+                <input id="settingNameInput" type="text" value="Nadia Pratama" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-600" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Email Workspace</label>
+                <input id="settingEmailInput" type="email" value="nadia.pratama@vexelflow.io" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-brand-600" />
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1.5">Resolusi DPI Default</label>
+                  <select id="settingDpiInput" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs bg-white focus:outline-none focus:border-brand-600">
+                    <option value="150">150 DPI (Web Optimized)</option>
+                    <option value="300" selected>300 DPI (Print Quality)</option>
+                    <option value="600">600 DPI (Archival Lossless)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1.5">Auto-Download setelah selesai</label>
+                  <select id="settingAutoDownload" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs bg-white focus:outline-none focus:border-brand-600">
+                    <option value="yes">Aktifkan</option>
+                    <option value="no" selected>Nonaktif (Simpan di Queue)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="pt-3 flex items-center gap-3">
+                <button type="submit" class="btn-interactive px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm">
+                  Simpan Pengaturan
+                </button>
+                <button type="button" onclick="resetDemoData()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50">
+                  Reset Data Workspace
+                </button>
+              </div>
+            </form>
+
+            <div id="settingsEnginePanel" class="hidden mt-6 max-w-xl space-y-4 text-xs">
+              <div class="p-4 rounded-2xl bg-brand-50/60 border border-brand-100 flex items-center justify-between">
+                <div>
+                  <h4 class="font-bold text-slate-900">AI Vectorizer & OCR Layer Engine v2.4</h4>
+                  <p class="text-slate-500 mt-0.5">Ekstraksi teks otomatis dan rekonstruksi kurva Bezier pada gambar raster.</p>
+                </div>
+                <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[11px]">Aktif</span>
+              </div>
+              <div class="p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
+                <div>
+                  <h4 class="font-bold text-slate-900">Enkripsi Penyimpanan Lokal</h4>
+                  <p class="text-slate-500 mt-0.5">Data antrean dan riwayat disimpan otomatis pada browser Anda.</p>
+                </div>
+                <span class="text-brand-600 font-semibold">LocalStorage Sync</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================= -->
+        <!-- VIEW 4: SUPPORT CENTER                                  -->
+        <!-- ======================================================= -->
+        <div id="view-support" class="spa-view hidden flex-1 min-h-0 overflow-y-auto pr-1 custom-scrollbar">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div class="bento-card animate-stagger delay-1 bg-white rounded-2xl p-6 shadow-card border border-slate-200/60">
+              <h1 class="font-display font-bold text-lg text-slate-900">Support Center & FAQ</h1>
+              <p class="text-xs text-slate-400 mt-1">Panduan cepat penggunaan konverter dan manajemen dokumen VexelFlow.</p>
+
+              <div class="mt-5 space-y-3 text-xs">
+                <details open class="group rounded-xl border border-slate-200 p-3.5">
+                  <summary class="font-semibold text-slate-900 cursor-pointer flex items-center justify-between">
+                    <span>Bagaimana cara mengonversi banyak file sekaligus?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                  </summary>
+                  <p class="mt-2 text-slate-500 leading-relaxed">
+                    Seret beberapa file sekaligus ke area dashed dropzone di halaman Home, atau gunakan tombol <strong>Tambah Data</strong> untuk membuat antrean konversi baru, lalu klik <strong>Download All</strong>.
+                  </p>
+                </details>
+                <details class="group rounded-xl border border-slate-200 p-3.5">
+                  <summary class="font-semibold text-slate-900 cursor-pointer flex items-center justify-between">
+                    <span>Apa fungsi fitur AI Converter di panel kanan?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                  </summary>
+                  <p class="mt-2 text-slate-500 leading-relaxed">
+                    AI Converter mengubah gambar bitmap (JPG/PNG) menjadi vektor SVG presisi tinggi dan mengekstrak layer terpisah dari dokumen PDF.
+                  </p>
+                </details>
+                <details class="group rounded-xl border border-slate-200 p-3.5">
+                  <summary class="font-semibold text-slate-900 cursor-pointer flex items-center justify-between">
+                    <span>Apakah perubahan data tersimpan jika halaman dimuat ulang?</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                  </summary>
+                  <p class="mt-2 text-slate-500 leading-relaxed">
+                    Ya. Seluruh operasi Create, Update, dan Delete otomatis tersinkronisasi dengan <code>localStorage</code> browser Anda.
+                  </p>
+                </details>
+              </div>
+            </div>
+
+            <div class="bento-card animate-stagger delay-2 bg-white rounded-2xl p-6 shadow-card border border-slate-200/60">
+              <h2 class="font-display font-bold text-lg text-slate-900">Kirim Tiket Bantuan</h2>
+              <p class="text-xs text-slate-400 mt-1">Tim engineer VexelFlow merespons rata-rata dalam 15 menit.</p>
+              <form onsubmit="submitSupportTicket(event)" class="mt-5 space-y-3.5 text-xs">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Subjek Kendala</label>
+                  <input id="ticketSubject" type="text" required placeholder="Misal: Ekstraksi layer PDF berukuran besar" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-brand-600" />
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">Detail Pesan</label>
+                  <textarea id="ticketMessage" rows="4" required placeholder="Jelaskan kebutuhan atau kendala Anda..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-brand-600"></textarea>
+                </div>
+                <button type="submit" class="btn-interactive px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-sm">
+                  Kirim Tiket Sekarang
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 1: CREATE / UPDATE FILE CRUD MODAL                  -->
+  <!-- ========================================================= -->
+  <div id="fileCrudModal" class="modal-backdrop fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="modal-panel bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+            <i data-lucide="file-cog" class="w-4 h-4"></i>
+          </div>
+          <h3 id="fileModalTitle" class="font-display font-bold text-base text-slate-900">Tambah File Konversi</h3>
+        </div>
+        <button onclick="closeModal('fileCrudModal')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="fileCrudForm" onsubmit="handleFileFormSubmit(event)" class="mt-4 space-y-3.5 text-xs">
+        <input type="hidden" id="editFileId" />
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Nama File *</label>
+          <input id="inputFileName" type="text" required placeholder="Contoh: laporan_kuartal_q4.jpg" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Format Asal</label>
+            <select id="inputSourceFormat" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-brand-600">
+              <option value="JPG">JPG</option>
+              <option value="PNG">PNG</option>
+              <option value="SVG">SVG</option>
+              <option value="DOC">DOC</option>
+              <option value="PDF">PDF</option>
+              <option value="XLS">XLS</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Format Target</label>
+            <select id="inputTargetFormat" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-brand-600">
+              <option value="PDF">PDF</option>
+              <option value="XLS">XLS</option>
+              <option value="SVG">SVG</option>
+              <option value="PNG">PNG</option>
+              <option value="JPG">JPG</option>
+              <option value="DOC">DOC</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Ukuran File (MB) *</label>
+            <input id="inputFileSize" type="number" step="0.1" min="0.1" max="500" required value="2.4" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-brand-600" />
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Status Konversi</label>
+            <select id="inputFileStatus" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-brand-600">
+              <option value="Converted">Converted</option>
+              <option value="Converting">Converting</option>
+              <option value="Queued">Queued</option>
+              <option value="Failed">Failed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Kategori Ruang</label>
+            <select id="inputFileScope" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-brand-600">
+              <option value="personal">Personal Workspace</option>
+              <option value="shared-by-you">Shared by you</option>
+              <option value="shared-with-you">Shared with you</option>
+            </select>
+          </div>
+          <div class="flex items-end pb-1.5">
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+              <input id="inputInActiveQueue" type="checkbox" checked class="rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
+              <span class="font-medium text-slate-700">Tampilkan di Queue Home</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="pt-3 flex items-center justify-end gap-2.5 border-t border-slate-100">
+          <button type="button" onclick="closeModal('fileCrudModal')" class="px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-600 hover:bg-slate-50">
+            Batal
+          </button>
+          <button type="submit" class="btn-interactive px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-sm">
+            Simpan File
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 2: DELETE CONFIRMATION MODAL                        -->
+  <!-- ========================================================= -->
+  <div id="deleteConfirmModal" class="modal-backdrop fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="modal-panel bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center">
+      <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+        <i data-lucide="trash-2" class="w-6 h-6"></i>
+      </div>
+      <h3 class="font-display font-bold text-base text-slate-900 mt-4">Hapus Dokumen?</h3>
+      <p id="deleteConfirmText" class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+        Tindakan ini akan menghapus dokumen terpilih secara permanen dari daftar antrean dan riwayat.
+      </p>
+      <div class="mt-5 grid grid-cols-2 gap-2.5">
+        <button onclick="closeModal('deleteConfirmModal')" class="py-2.5 px-4 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+          Batalkan
+        </button>
+        <button id="confirmDeleteBtn" class="btn-interactive py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm">
+          Ya, Hapus
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 3: AI CONVERTER STUDIO MODAL                        -->
+  <!-- ========================================================= -->
+  <div id="aiStudioModal" class="modal-backdrop fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="modal-panel bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl">
+      <div class="ai-promo-gradient p-6 text-white flex items-center justify-between">
+        <div>
+          <span class="px-2.5 py-0.5 rounded-full bg-white text-slate-900 text-[10px] font-bold">VexelFlow AI v2.4</span>
+          <h3 class="font-display font-bold text-lg mt-2">AI Vectorizer & Layer Extractor</h3>
+        </div>
+        <button onclick="closeModal('aiStudioModal')" class="p-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form onsubmit="runAiConversion(event)" class="p-6 space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Mode Pemrosesan AI</label>
+          <select id="aiModeSelect" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white font-medium text-slate-800 focus:outline-none focus:border-brand-600">
+            <option value="vectorize">Vectorize Raster Image → Clean SVG</option>
+            <option value="extract">Extract Multi-Layer PDF → Editable Assets</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Nama Aset Sumber</label>
+          <input id="aiAssetName" type="text" required value="brand_illustration_hero.png" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-brand-600" />
+        </div>
+        <div class="p-3 rounded-xl bg-amber-50 border border-amber-200/80 text-amber-800 flex items-start gap-2.5">
+          <i data-lucide="sparkles" class="w-4 h-4 text-amber-500 shrink-0 mt-0.5"></i>
+          <span>Hasil pemrosesan AI akan otomatis ditambahkan ke antrean aktif dan riwayat konversi Anda.</span>
+        </div>
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('aiStudioModal')" class="px-4 py-2.5 rounded-xl border border-slate-200 font-semibold text-slate-600">Tutup</button>
+          <button type="submit" class="btn-interactive px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-sm">
+            Jalankan AI Sekarang
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 4: UPGRADE PLAN & LOGOUT MODALS                     -->
+  <!-- ========================================================= -->
+  <div id="upgradeModal" class="modal-backdrop fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="modal-panel bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <span class="px-3 py-1 rounded-full bg-accent-100 text-accent-600 text-[11px] font-bold">VexelFlow Pro</span>
+        <button onclick="closeModal('upgradeModal')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <h3 class="font-display font-bold text-xl text-slate-900 mt-3">Tingkatkan ke Unlimited Conversions</h3>
+      <p class="text-xs text-slate-500 mt-1">Buka pemrosesan batch tanpa batas, AI Vectorizer 4K, dan penyimpanan cloud 500 GB.</p>
+      <div class="mt-4 p-4 rounded-2xl bg-brand-50 border border-brand-100 flex items-baseline justify-between">
+        <div>
+          <span class="font-display font-extrabold text-2xl text-brand-700">Rp 79.000</span>
+          <span class="text-xs text-slate-500"> / bulan</span>
+        </div>
+        <span class="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">Hemat 35%</span>
+      </div>
+      <button onclick="activateProDemo()" class="btn-interactive mt-5 w-full py-3 rounded-xl bg-slate-900 hover:bg-brand-600 text-white text-xs font-bold">
+        Aktifkan Uji Coba Pro (100 Kuota)
+      </button>
+    </div>
+  </div>
+
+  <div id="logoutModal" class="modal-backdrop fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="modal-panel bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center">
+      <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mx-auto">
+        <i data-lucide="log-out" class="w-5 h-5"></i>
+      </div>
+      <h3 class="font-display font-bold text-base text-slate-900 mt-3.5">Keluar dari Sesi VexelFlow?</h3>
+      <p class="text-xs text-slate-500 mt-1">Data konversi Anda tetap tersimpan aman di penyimpanan lokal browser.</p>
+      <div class="mt-5 grid grid-cols-2 gap-2.5">
+        <button onclick="closeModal('logoutModal')" class="py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600">Batal</button>
+        <button onclick="closeModal('logoutModal'); showToast('Sesi dikunci sementara. Selamat datang kembali!', 'info')" class="btn-interactive py-2.5 rounded-xl bg-brand-600 text-white text-xs font-semibold">Konfirmasi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- TOAST NOTIFICATION CONTAINER                              -->
+  <!-- ========================================================= -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-xs w-full pointer-events-none"></div>
+
+  <!-- ========================================================= -->
+  <!-- APPLICATION LOGIC & CRUD STATE ENGINE                     -->
+  <!-- ========================================================= -->
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
